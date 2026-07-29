@@ -1,0 +1,70 @@
+services:
+  browser:
+    build:
+      context: ./browser
+    cap_add:
+      - SYS_ADMIN
+    init: true
+    restart: unless-stopped
+    environment:
+      SCREEN_WIDTH: ${SCREEN_WIDTH:-1440}
+      SCREEN_HEIGHT: ${SCREEN_HEIGHT:-900}
+      SCREEN_DEPTH: ${SCREEN_DEPTH:-24}
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:6080:6080"
+    expose:
+      - "9223"
+    networks:
+      default:
+        aliases:
+          - browser.localhost
+    volumes:
+      - browser-data:/data/chromium
+    shm_size: "2gb"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:9222/json/version"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+  mcp:
+    build:
+      context: ./mcp
+    init: true
+    restart: unless-stopped
+    depends_on:
+      browser:
+        condition: service_healthy
+    command:
+      - playwright-mcp
+      - --cdp-endpoint
+      - http://browser.localhost:9223
+      - --shared-browser-context
+      - --port
+      - "8931"
+      - --host
+      - 0.0.0.0
+      - --allowed-hosts
+      - "*"
+      - --output-dir
+      - /data/output
+      - --output-mode
+      - file
+    ports:
+      - "${BIND_ADDRESS:-127.0.0.1}:8931:8931"
+    volumes:
+      - ./output:/data/output
+    healthcheck:
+      test:
+        - CMD
+        - node
+        - -e
+        - "require('net').connect(8931, '127.0.0.1').once('connect', function () { this.destroy(); process.exit(0) }).once('error', () => process.exit(1))"
+      interval: 5s
+      timeout: 3s
+      retries: 30
+      start_period: 10s
+
+volumes:
+  browser-data:

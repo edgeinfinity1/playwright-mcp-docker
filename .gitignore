@@ -1,0 +1,21 @@
+# Local environment overrides
+.env
+.env.*
+!.env.example
+
+# MCP-generated screenshots, snapshots, logs, and downloads
+output/*
+!output/.gitkeep
+
+# Node.js dependencies and logs
+node_modules/
+*.log
+npm-debug.log*
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+*.swp
+*~
