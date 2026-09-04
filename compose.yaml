@@ -33,6 +33,7 @@ services:
       context: ./mcp
     init: true
     restart: unless-stopped
+    working_dir: /data/output
     depends_on:
       browser:
         condition: service_healthy
